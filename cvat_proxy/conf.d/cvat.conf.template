@@ -1,12 +1,6 @@
 server {
     listen       80;
     server_name  _ default;
-    return       404;
-}
-
-server {
-    listen       80;
-    server_name  ${CVAT_HOST};
 
     proxy_pass_header       X-CSRFToken;
     proxy_set_header        Host $http_host;
