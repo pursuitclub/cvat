@@ -82,6 +82,8 @@ try:
 except Exception:
     pass
 
+GIT_SYNC_PATH = '/data/labels/cvat/annotations/'
+
 # Application definition
 JS_3RDPARTY = {}
 CSS_3RDPARTY = {}
