@@ -365,7 +365,8 @@ def initial_create(tid, git_path, lfs, user):
         else:
             anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
             path_prefix = settings.GIT_SYNC_PATH or '/annotations/'
-            path = '{}{}.zip'.format(path_prefix, anno_file)
+            ext = settings.GIT_SYNC_EXT or 'zip'
+            path = '{}{}.{}'.format(path_prefix, anno_file, ext)
 
         path = path[1:]
         _split = os.path.splitext(path)
