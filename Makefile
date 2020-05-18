@@ -17,4 +17,4 @@ prod-deploy:
 
 # target: prod-shell - Starts a shell in the prod Django container (run this from prod VM).
 prod-shell:
-    docker exec -it cvat bash -ic 'python3 ~/manage.py shell'
+	docker exec -it cvat bash -ic 'python3 ~/manage.py shell'
