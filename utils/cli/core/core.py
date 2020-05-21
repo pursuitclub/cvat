@@ -18,7 +18,7 @@ class CLI():
         self.api = api
         self.session = session
 
-    def tasks_data(self, task_id, resource_type, resources):
+    def tasks_data(self, task_id, resource_type, resources, **kwargs):
         """ Add local, remote, or shared files to an existing task. """
         url = self.api.tasks_id_data(task_id)
         data = {}
@@ -29,7 +29,9 @@ class CLI():
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
-        data['image_quality'] = 50
+        data['image_quality'] = kwargs['image_quality'] or 50
+        data['frame_filter'] = kwargs['frame_filter']
+        data['use_zip_chunks'] = kwargs['use_zip_chunks'] or True
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
 
@@ -147,6 +149,11 @@ class CVAT_API_V1():
 
     def __init__(self, host, port):
         self.base = 'http://{}:{}/api/v1/'.format(host, port)
+        self.git_base = 'http://{}:{}/git/'.format(host, port)
+
+    @property
+    def login(self):
+        return self.base + 'auth/login'
 
     @property
     def tasks(self):
@@ -161,6 +168,9 @@ class CVAT_API_V1():
     def tasks_id_data(self, task_id):
         return self.tasks_id(task_id) + '/data'
 
+    def tasks_id_status(self, task_id):
+        return self.tasks_id(task_id) + '/status'
+
     def tasks_id_frame_id(self, task_id, frame_id, quality):
         return self.tasks_id(task_id) + '/data?type=frame&number={}&quality={}'.format(frame_id, quality)
 
@@ -171,3 +181,6 @@ class CVAT_API_V1():
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \
             .format(name, fileformat)
+
+    def git_repo_create(self, task_id):
+        return self.git_base + 'repository/create/{}'.format(task_id)

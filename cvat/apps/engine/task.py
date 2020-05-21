@@ -200,6 +200,7 @@ def _download_data(urls, upload_dir):
         except urlerror.URLError as err:
             raise Exception("Invalid URL: " + url + ". " + err.reason)
 
+        slogger.glob.info("Finished downloading: {}".format(url))
         local_files[name] = True
     return list(local_files.keys())
 

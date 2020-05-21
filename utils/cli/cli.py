@@ -6,6 +6,7 @@ import requests
 import sys
 from http.client import HTTPConnection
 from core.core import CLI, CVAT_API_V1
+from core.motion import MotionCLI
 from core.definition import parser
 log = logging.getLogger(__name__)
 
@@ -24,7 +25,8 @@ def main():
                'ls': CLI.tasks_list,
                'frames': CLI.tasks_frame,
                'dump': CLI.tasks_dump,
-               'upload': CLI.tasks_upload}
+               'upload': CLI.tasks_upload,
+               'sync': MotionCLI.tasks_sync}
     args = parser.parse_args()
     config_log(args.loglevel)
     with requests.Session() as session:

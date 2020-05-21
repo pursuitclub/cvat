@@ -241,3 +241,18 @@ upload_parser.add_argument(
     default='CVAT XML 1.1',
     help='annotation format (default: %(default)s)'
 )
+
+#######################################################################
+# Sync
+#######################################################################
+
+task_sync_parser = task_subparser.add_parser(
+    'sync',
+    description='Sync CVAT tasks with videos in the cloud storage queue bucket.'
+)
+task_sync_parser.add_argument(
+    '--dry_run',
+    type=bool,
+    default=False,
+    help='Execute task but don\'t modify any data'
+)
