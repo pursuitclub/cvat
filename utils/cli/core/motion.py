@@ -47,7 +47,7 @@ LABEL_JSON = json.loads("""
 
 class MotionCLI(CLI):
 
-    def tasks_sync(self, dry_run=False, **kwargs):
+    def tasks_sync(self, video_uuid=None, dry_run=False, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         # 1. Get list of video URLs from GCP
@@ -77,46 +77,49 @@ class MotionCLI(CLI):
         # END LOGIN HACK
 
         storage_client = storage.Client()
-        blobs = storage_client.list_blobs('pursuit-videos')
-        for blob in blobs:
-            expiration = datetime.now(timezone.utc) + timedelta(minutes=10)
-            signed_url = blob.generate_signed_url(expiration=expiration)
 
-            url = self.api.tasks
-            data = {
-                'name': blob.name,
-                'labels': LABEL_JSON,
-                'bug_tracker': '',
-            }
-            response = self.session.post(url, json=data)
-            response.raise_for_status()
-            response_json = response.json()
-            log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
-            task_id = response_json['id']
-            self.tasks_data(
-                task_id,
-                ResourceType['REMOTE'],
-                [signed_url],
-                image_quality=100,
-                frame_filter='step=30', # Displayed as 'Frame step' in task creation UI
-                use_zip_chunks=True,
-            )
+        # get single blob
+        blobs = storage_client.list_blobs('pursuit-videos', prefix=video_uuid)
+        for item in blobs:
+            blob = item
+        if blobs.num_results != 1:
+            raise Exception('Expected a single matching video blob, found {}'.format(blobs.num_results))
 
-            # TODO(troycarlson): Poll for data created status before cloning git repo
-            # resp = self.session.get(self.api.tasks_id_status(task_id))
-            # print(resp.json())
-            time.sleep(10)
+        expiration = datetime.now(timezone.utc) + timedelta(minutes=10)
+        signed_url = blob.generate_signed_url(expiration=expiration)
 
-            # Initialize git repo
-            repo_path = 'git@github.com:pursuitclub/sandbox'
-            log.info('Initializing git repo for task. task_id: {}. path: {}'.format(task_id, repo_path))
-            git_api_url = self.api.git_repo_create(task_id)
-            git_api_data = {
-                'lfs': False,
-                'path': repo_path,
-                'tid': task_id,
-            }
-            response = self.session.post(git_api_url, json=git_api_data)
+        url = self.api.tasks
+        data = {
+            'name': blob.name,
+            'labels': LABEL_JSON,
+            'bug_tracker': '',
+        }
+        response = self.session.post(url, json=data)
+        response.raise_for_status()
+        response_json = response.json()
+        log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
+        task_id = response_json['id']
+        self.tasks_data(
+            task_id,
+            ResourceType['REMOTE'],
+            [signed_url],
+            image_quality=100,
+            frame_filter='step=30', # Displayed as 'Frame step' in task creation UI
+            use_zip_chunks=True,
+        )
 
-            # Break while testing
-            break
+        # TODO(troycarlson): Poll for data created status before cloning git repo
+        # resp = self.session.get(self.api.tasks_id_status(task_id))
+        # print(resp.json())
+        time.sleep(10)
+
+        # Initialize git repo
+        repo_path = 'git@github.com:pursuitclub/sandbox'
+        log.info('Initializing git repo for task. task_id: {}. path: {}'.format(task_id, repo_path))
+        git_api_url = self.api.git_repo_create(task_id)
+        git_api_data = {
+            'lfs': False,
+            'path': repo_path,
+            'tid': task_id,
+        }
+        response = self.session.post(git_api_url, json=git_api_data)

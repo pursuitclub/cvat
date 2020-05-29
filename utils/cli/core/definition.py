@@ -251,8 +251,8 @@ task_sync_parser = task_subparser.add_parser(
     description='Sync CVAT tasks with videos in the cloud storage queue bucket.'
 )
 task_sync_parser.add_argument(
-    '--dry_run',
-    type=bool,
-    default=False,
-    help='Execute task but don\'t modify any data'
+    '--video_uuid',
+    type=str,
+    default='',
+    help='UUID of the video to generate a task for'
 )
