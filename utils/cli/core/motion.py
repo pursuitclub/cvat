@@ -19,6 +19,7 @@ LABEL_JSON = json.loads("""
                 "name": "Mirror",
                 "input_type": "checkbox",
                 "mutable": false,
+                "default_value": "false",
                 "values": [
                     "false"
                 ]
@@ -27,6 +28,7 @@ LABEL_JSON = json.loads("""
                 "name": "Occluded",
                 "input_type": "checkbox",
                 "mutable": true,
+                "default_value": "false",
                 "values": [
                     "false"
                 ]
@@ -35,6 +37,7 @@ LABEL_JSON = json.loads("""
                 "name": "Truncated",
                 "input_type": "checkbox",
                 "mutable": true,
+                "default_value": "false",
                 "values": [
                     "false"
                 ]
@@ -114,7 +117,7 @@ class MotionCLI(CLI):
         time.sleep(10)
 
         # Initialize git repo
-        repo_path = 'git@github.com:pursuitclub/sandbox'
+        repo_path = 'git@github.com:pursuitclub/pursuit'
         log.info('Initializing git repo for task. task_id: {}. path: {}'.format(task_id, repo_path))
         git_api_url = self.api.git_repo_create(task_id)
         git_api_data = {
