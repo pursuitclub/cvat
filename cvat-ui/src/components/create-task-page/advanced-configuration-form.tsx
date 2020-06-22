@@ -291,6 +291,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 extra='Attach a repository to store annotations there'
             >
                 {form.getFieldDecorator('repository', {
+                    // TODO: Get this from config/environment variable
+                    initialValue: 'git@github.com:pursuitclub/pursuit',
                     rules: [{
                         validator: (_, value, callback): void => {
                             if (!value) {

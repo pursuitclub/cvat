@@ -14,6 +14,7 @@ import zipfile
 
 import django_rq
 import git
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -366,7 +367,9 @@ def initial_create(tid, git_path, lfs, user):
             path = os.path.join('/', path.strip())
         else:
             anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
-            path = '/annotation/{}.zip'.format(anno_file)
+            path_prefix = settings.GIT_SYNC_PATH or '/annotations/'
+            ext = settings.GIT_SYNC_EXT or 'zip'
+            path = '{}{}.{}'.format(path_prefix, anno_file, ext)
 
         path = path[1:]
         _split = os.path.splitext(path)

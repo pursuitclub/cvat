@@ -396,6 +396,9 @@ LOGGING = {
     },
 }
 
+GIT_SYNC_PATH = '/data/labels/cvat/annotations/'
+GIT_SYNC_EXT = 'xml'
+
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
     LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
