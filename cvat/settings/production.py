@@ -31,3 +31,5 @@ DATABASES = {
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
     }
 }
+
+VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels'
