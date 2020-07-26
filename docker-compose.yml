@@ -53,6 +53,7 @@ services:
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
       ALLOWED_HOSTS: '*'
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
