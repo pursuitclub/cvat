@@ -1539,6 +1539,9 @@
                 rightPosition.points[index] - point
             ))
 
+            // Voxel: Override offset to prevent interpolation
+            offset = 0;
+
             return {
                 points: leftPosition.points.map((point ,index) => (
                     point + positionOffset[index] * offset
