@@ -473,7 +473,7 @@ class TrackManager(ObjectManager):
             step = np.subtract(shape1["points"], shape0["points"]) / distance
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 off = frame - shape0["frame"]
-                # Override off to disable interpolation
+                # Voxel: Override off to disable interpolation
                 off = 0
                 if shape1["outside"]:
                     points = np.asarray(shape0["points"]).reshape(-1, 2)

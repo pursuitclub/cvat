@@ -14,6 +14,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from pathlib import Path
 import os
 import sys
 import fcntl
@@ -22,17 +23,17 @@ import subprocess
 import mimetypes
 mimetypes.add_type("application/wasm", ".wasm", True)
 
-from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
 try:
     sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+    from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
 except ImportError:
 
     from django.utils.crypto import get_random_string
@@ -53,28 +54,40 @@ def generate_ssh_keys():
     with open(pidfile, "w") as pid:
         fcntl.flock(pid, fcntl.LOCK_EX)
         try:
-            subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
-            keys = subprocess.run(['ssh-add -l'], shell = True,
-                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+            subprocess.run(['ssh-add {}/*'.format(ssh_dir)],
+                           shell=True, stderr=subprocess.PIPE)
+            keys = subprocess.run(['ssh-add -l'], shell=True,
+                                  stdout=subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
                 volume_keys = os.listdir(keys_dir)
                 if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
                     print('New pair of keys are being generated')
-                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
-                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    subprocess.run(
+                        ['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True)
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir),
+                                    '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir),
+                                    '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir),
+                                    '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir),
+                                    '{}/id_rsa.pub'.format(keys_dir))
                 else:
                     print('Copying them from keys volume')
-                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir),
+                                    '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir),
+                                    '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir),
+                                    '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir),
+                                    '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(
+                    ['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell=True)
         finally:
             fcntl.flock(pid, fcntl.LOCK_UN)
+
 
 try:
     if os.getenv("SSH_AUTH_SOCK", None):
@@ -259,7 +272,8 @@ COMPRESS_CSS_FILTERS = [
     'compressor.filters.css_default.CssAbsoluteFilter',
     'compressor.filters.cssmin.rCSSMinFilter'
 ]
-COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
+# No compression for js files (template literals were compressed bad)
+COMPRESS_JS_FILTERS = []
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -282,7 +296,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Cache DB access (e.g. for engine.task.get_frame)
 # https://github.com/Suor/django-cacheops
 CACHEOPS_REDIS = {
-    'host': 'localhost', # redis-server is on same machine
+    'host': 'localhost',  # redis-server is on same machine
     'port': 6379,        # default redis port
     'db': 1,             # SELECT non-default redis database
 }
@@ -361,7 +375,7 @@ LOGGING = {
             'level': 'DEBUG',
             'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
             'formatter': 'standard',
-            'maxBytes': 1024*1024*50, # 50 MB
+            'maxBytes': 1024*1024*50,  # 50 MB
             'backupCount': 5,
         },
         'logstash': {
@@ -400,6 +414,7 @@ GIT_SYNC_PATH = '/data/labels/cvat/annotations/'
 GIT_SYNC_EXT = 'xml'
 
 VOXEL_LABEL_FIRESTORE_COLLECTION = 'labels_dev'
+VOXEL_LABEL_BUCKET_NAME = 'voxel-labels-dev'
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
@@ -428,5 +443,5 @@ RESTRICTIONS = {
         'engine.role.annotator',
         'engine.role.user',
         'engine.role.admin',
-        ),
+    ),
 }
