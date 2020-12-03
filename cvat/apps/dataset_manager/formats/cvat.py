@@ -20,8 +20,10 @@ def pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
 
+
 def create_xml_dumper(file_object):
     from xml.sax.saxutils import XMLGenerator
+
     class XmlAnnotationWriter:
         def __init__(self, file):
             self.version = "1.1"
@@ -29,7 +31,7 @@ def create_xml_dumper(file_object):
             self.xmlgen = XMLGenerator(self.file, 'utf-8')
             self._level = 0
 
-        def _indent(self, newline = True):
+        def _indent(self, newline=True):
             if newline:
                 self.xmlgen.ignorableWhitespace("\n")
             self.xmlgen.ignorableWhitespace("  " * self._level)
@@ -170,6 +172,7 @@ def create_xml_dumper(file_object):
 
     return XmlAnnotationWriter(file_object)
 
+
 def dump_as_cvat_annotation(file_object, annotations):
     dumper = create_xml_dumper(file_object)
     dumper.open_root()
@@ -231,7 +234,6 @@ def dump_as_cvat_annotation(file_object, annotations):
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
-
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
             elif shape.type == "polygon":
@@ -283,12 +285,15 @@ def dump_as_cvat_annotation(file_object, annotations):
         dumper.close_image()
     dumper.close_root()
 
+
 def dump_as_cvat_interpolation(file_object, annotations):
     dumper = create_xml_dumper(file_object)
     dumper.open_root()
     dumper.add_meta(annotations.meta)
+
     def dump_track(idx, track):
-        track_id = idx
+        # Voxel: override track ID to have XML consistent with DB/UI
+        track_id = track.track_id
         dump_data = OrderedDict([
             ("id", str(track_id)),
             ("label", track.label),
@@ -335,7 +340,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
             else:
                 dump_data.update(OrderedDict([
                     ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
-                        for x,y in pairwise(shape.points)]))
+                                         for x, y in pairwise(shape.points)]))
                 ]))
 
             if annotations.meta["task"]["z_order"] != "False":
@@ -393,7 +398,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
                 frame=shape.frame,
                 attributes=shape.attributes,
             ),
-            annotations.TrackedShape(
+                annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
                 occluded=shape.occluded,
@@ -408,6 +413,7 @@ def dump_as_cvat_interpolation(file_object, annotations):
         counter += 1
 
     dumper.close_root()
+
 
 def load(file_object, annotations):
     from defusedxml import ElementTree
@@ -511,6 +517,7 @@ def load(file_object, annotations):
                 tag = None
             el.clear()
 
+
 def _export(dst_file, task_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:
         with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
@@ -527,22 +534,25 @@ def _export(dst_file, task_data, anno_callback, save_images=False):
                 frame_name = task_data.frame_info[frame_id]['path']
                 if '.' in frame_name:
                     save_image(osp.join(img_dir, frame_name),
-                        frame_data, jpeg_quality=100)
+                               frame_data, jpeg_quality=100)
                 else:
                     save_image(osp.join(img_dir, frame_name + '.png'),
-                        frame_data)
+                               frame_data)
 
         make_zip_archive(temp_dir, dst_file)
+
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
 def _export_video(dst_file, task_data, save_images=False):
     _export(dst_file, task_data,
-        anno_callback=dump_as_cvat_interpolation, save_images=save_images)
+            anno_callback=dump_as_cvat_interpolation, save_images=save_images)
+
 
 @exporter(name='CVAT for images', ext='ZIP', version='1.1')
 def _export_images(dst_file, task_data, save_images=False):
     _export(dst_file, task_data,
-        anno_callback=dump_as_cvat_annotation, save_images=save_images)
+            anno_callback=dump_as_cvat_annotation, save_images=save_images)
+
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, task_data):

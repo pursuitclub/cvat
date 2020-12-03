@@ -24,7 +24,7 @@ class TaskData:
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
-    Track = namedtuple('Track', 'label, group, shapes')
+    Track = namedtuple('Track', 'track_id, label, group, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -194,7 +194,7 @@ class TaskData:
         return TaskData.TrackedShape(
             type=shape["type"],
             frame=self._db_task.data.start_frame +
-                shape["frame"] * self._frame_step,
+            shape["frame"] * self._frame_step,
             label=self._get_label_name(shape["label_id"]),
             points=shape["points"],
             occluded=shape["occluded"],
@@ -211,7 +211,7 @@ class TaskData:
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
             frame=self._db_task.data.start_frame +
-                shape["frame"] * self._frame_step,
+            shape["frame"] * self._frame_step,
             points=shape["points"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
@@ -222,7 +222,7 @@ class TaskData:
     def _export_tag(self, tag):
         return TaskData.Tag(
             frame=self._db_task.data.start_frame +
-                tag["frame"] * self._frame_step,
+            tag["frame"] * self._frame_step,
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
@@ -230,6 +230,7 @@ class TaskData:
 
     def group_by_frame(self, include_empty=False):
         frames = {}
+
         def get_frame(idx):
             frame_info = self._frame_info[idx]
             frame = self._db_task.data.start_frame + idx * self._frame_step
@@ -251,7 +252,7 @@ class TaskData:
 
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
-                key=lambda shape: shape.get("z_order", 0)):
+                            key=lambda shape: shape.get("z_order", 0)):
             if 'track_id' in shape:
                 exported_shape = self._export_tracked_shape(shape)
             else:
@@ -276,15 +277,16 @@ class TaskData:
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
                 tracked_shape["attributes"] += track["attributes"]
-                tracked_shape["track_id"] = idx
+                tracked_shape["track_id"] = track["id"]
                 tracked_shape["group"] = track["group"]
                 tracked_shape["label_id"] = track["label_id"]
 
             yield TaskData.Track(
+                track_id=track["id"],
                 label=self._get_label_name(track["label_id"]),
                 group=track["group"],
                 shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes],
+                        for shape in tracked_shapes],
             )
 
     @property
@@ -300,11 +302,11 @@ class TaskData:
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
         _tag['frame'] = (int(_tag['frame']) -
-            self._db_task.data.start_frame) // self._frame_step
+                         self._db_task.data.start_frame) // self._frame_step
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
-            for attrib in _tag['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+                              for attrib in _tag['attributes']
+                              if self._get_attribute_id(label_id, attrib.name)]
         return _tag
 
     def _import_attribute(self, label_id, attribute):
@@ -317,30 +319,30 @@ class TaskData:
         _shape = shape._asdict()
         label_id = self._get_label_id(_shape.pop('label'))
         _shape['frame'] = (int(_shape['frame']) -
-            self._db_task.data.start_frame) // self._frame_step
+                           self._db_task.data.start_frame) // self._frame_step
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
-            for attrib in _shape['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+                                for attrib in _shape['attributes']
+                                if self._get_attribute_id(label_id, attrib.name)]
         return _shape
 
     def _import_track(self, track):
         _track = track._asdict()
         label_id = self._get_label_id(_track.pop('label'))
         _track['frame'] = (min(int(shape.frame) for shape in _track['shapes']) -
-            self._db_task.data.start_frame) // self._frame_step
+                           self._db_task.data.start_frame) // self._frame_step
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
-            shape['frame'] = (int(shape['frame']) - \
-                self._db_task.data.start_frame) // self._frame_step
+            shape['frame'] = (int(shape['frame']) -
+                              self._db_task.data.start_frame) // self._frame_step
             _track['attributes'] = [self._import_attribute(label_id, attrib)
-                for attrib in shape['attributes']
-                if self._get_immutable_attribute_id(label_id, attrib.name)]
+                                    for attrib in shape['attributes']
+                                    if self._get_immutable_attribute_id(label_id, attrib.name)]
             shape['attributes'] = [self._import_attribute(label_id, attrib)
-                for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name)]
+                                   for attrib in shape['attributes']
+                                   if self._get_mutable_attribute_id(label_id, attrib.name)]
 
         return _track
 
@@ -403,6 +405,7 @@ class TaskData:
         raise Exception(
             "Cannot match filename or determine frame number for {} filename".format(filename))
 
+
 class CvatTaskDataExtractor(datumaro.SourceExtractor):
     def __init__(self, task_data, include_images=False):
         super().__init__()
@@ -416,15 +419,15 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
         for frame_data in task_data.group_by_frame(include_empty=True):
             loader = None
             if include_images:
-                loader = lambda p, i=frame_data.idx: frame_provider.get_frame(i,
-                    quality=frame_provider.Quality.ORIGINAL,
-                    out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                def loader(p, i=frame_data.idx): return frame_provider.get_frame(i,
+                                                                                 quality=frame_provider.Quality.ORIGINAL,
+                                                                                 out_type=frame_provider.Type.NUMPY_ARRAY)[0]
             dm_image = Image(path=frame_data.name, loader=loader,
-                size=(frame_data.height, frame_data.width)
-            )
+                             size=(frame_data.height, frame_data.width)
+                             )
             dm_anno = self._read_cvat_anno(frame_data, task_data)
             dm_item = datumaro.DatasetItem(id=frame_data.frame,
-                annotations=dm_anno, image=dm_image)
+                                           annotations=dm_anno, image=dm_image)
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -490,7 +493,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
             anno = datumaro.Label(label=anno_label,
-                attributes=anno_attr, group=anno_group)
+                                  attributes=anno_attr, group=anno_group)
             item_anno.append(anno)
 
         for shape_obj in cvat_frame_anno.labeled_shapes:
@@ -506,29 +509,30 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor):
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
                 anno = datumaro.Points(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
+                                       label=anno_label, attributes=anno_attr, group=anno_group,
+                                       z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.POLYLINE:
                 anno = datumaro.PolyLine(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
+                                         label=anno_label, attributes=anno_attr, group=anno_group,
+                                         z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.POLYGON:
                 anno = datumaro.Polygon(anno_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
+                                        label=anno_label, attributes=anno_attr, group=anno_group,
+                                        z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.RECTANGLE:
                 x0, y0, x1, y1 = anno_points
                 anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
+                                     label=anno_label, attributes=anno_attr, group=anno_group,
+                                     z_order=shape_obj.z_order)
             elif shape_obj.type == ShapeType.CUBOID:
-                continue # Datumaro does not support cuboids
+                continue  # Datumaro does not support cuboids
             else:
                 raise Exception("Unknown shape type '%s'" % shape_obj.type)
 
             item_anno.append(anno)
 
         return item_anno
+
 
 def match_frame(item, task_data):
     is_video = task_data.meta['task']['mode'] == 'interpolation'
@@ -553,8 +557,9 @@ def match_frame(item, task_data):
         frame_number = int(item.id[len('frame_'):])
     if not frame_number in task_data.frame_info:
         raise Exception("Could not match item id: '%s' with any task frame" %
-            item.id)
+                        item.id)
     return frame_number
+
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
@@ -582,7 +587,7 @@ def import_dm_annotations(dm_dataset, task_data):
                 else:
                     group_size[ann.group] += 1
         group_map = {g: s for g, s in group_size.items()
-            if 1 < s and group_map[g]}
+                     if 1 < s and group_map[g]}
         group_map = {g: i for i, g in enumerate([0] + sorted(group_map))}
 
         for ann in item.annotations:
@@ -596,7 +601,7 @@ def import_dm_annotations(dm_dataset, task_data):
                     z_order=ann.z_order,
                     group=group_map.get(ann.group, 0),
                     attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
+                                for n, v in ann.attributes.items()],
                 ))
             elif ann.type == datumaro.AnnotationType.label:
                 task_data.add_tag(task_data.Tag(
@@ -604,5 +609,5 @@ def import_dm_annotations(dm_dataset, task_data):
                     label=label_cat.items[ann.label].name,
                     group=group_map.get(ann.group, 0),
                     attributes=[task_data.Attribute(name=n, value=str(v))
-                        for n, v in ann.attributes.items()],
+                                for n, v in ann.attributes.items()],
                 ))
