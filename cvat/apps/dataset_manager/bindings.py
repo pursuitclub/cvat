@@ -25,6 +25,7 @@ class TaskData:
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 0, None, 0)
     Track = namedtuple('Track', 'track_id, label, group, shapes')
+    Track.__new__.__defaults__ = (None, None, None, None)
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
