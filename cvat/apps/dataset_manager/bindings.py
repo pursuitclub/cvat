@@ -255,6 +255,10 @@ class TaskData:
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                             key=lambda shape: shape.get("z_order", 0)):
             if 'track_id' in shape:
+                # Voxel: Don't export outside frames in frame-based formats
+                # https://github.com/openvinotoolkit/cvat/pull/2345
+                if shape['outside']:
+                    continue
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
